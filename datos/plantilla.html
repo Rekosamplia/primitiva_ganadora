@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Primitiva Ganadora</title>
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1d1b18; --muted:#6b665d; --line:#e4dfd4;
+  --accent:#c8102e; --accent-ink:#fff; --gold:#d9a400; --cold:#2f6fb5; --ok:#1f8a4c;
+  --ball:#fffdf8; --ball-ink:#1d1b18; --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --panel:#1f1d18; --ink:#f1ede4; --muted:#a39d90; --line:#34312a;
+    --accent:#ff4d5e; --accent-ink:#1a0a0c; --gold:#f2c230; --cold:#6fa8e8; --ok:#4cc27e;
+    --ball:#2a2822; --ball-ink:#f1ede4; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{margin:0;font-size:28px;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px}
+h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:12px;color:var(--muted)}
+.stat b{display:block;color:var(--ink);font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.row label{font-size:13px;color:var(--muted)}
+input[type=range]{accent-color:var(--accent);width:160px}
+select{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px}
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.n{position:relative;aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:var(--ball);color:var(--ball-ink);
+   display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:17px;user-select:none;transition:transform .08s}
+.n:hover{transform:scale(1.06)}
+.n small{font-size:9px;font-weight:500;opacity:.75;line-height:1}
+.n .rk{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#1d1b18;border-radius:9px;font-size:9px;padding:1px 4px;font-weight:700}
+.n.fix{outline:3px solid var(--ok);outline-offset:2px}
+.n.exc{opacity:.25;text-decoration:line-through}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;margin-right:4px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:15px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;font-size:13px;padding:7px 12px}
+.combo{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.balls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.b{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+.b.c{background:var(--gold);color:#1d1b18}
+.b.r{background:var(--cold);color:#fff}
+.tag{font-size:11px;color:var(--muted);margin:0 2px 0 6px}
+.why{margin:10px 0 0;padding-left:18px;font-size:13.5px}
+.why li{margin:3px 0}
+.why b{font-weight:650}
+.nums{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.nums th,.nums td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
+.nums th:first-child,.nums td:first-child{text-align:left}
+.nums th{color:var(--muted);font-weight:600}
+.bars{display:grid;grid-template-columns:repeat(49,1fr);align-items:end;gap:2px;height:120px;margin-top:6px}
+.bar{background:var(--cold);border-radius:2px 2px 0 0;min-height:2px;position:relative}
+.bar.hot{background:var(--accent)}
+.barlbl{display:grid;grid-template-columns:repeat(49,1fr);gap:2px;font-size:8px;color:var(--muted);text-align:center}
+.last{font-size:13px;width:100%;border-collapse:collapse}
+.last td{padding:4px 4px;border-bottom:1px solid var(--line)}
+.mini{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--ball);border:1px solid var(--line);align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:2px}
+.mini.c{background:var(--gold);color:#1d1b18;border-color:var(--gold)}
+.note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+.full{grid-column:1/-1}
+.copy{float:right}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Primitiva <span>Ganadora</span></h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="grid">
+  <!-- Panel de números -->
+  <section class="card">
+    <h2>1 · Elige el filtro</h2>
+    <div class="chips" id="filters"></div>
+    <div class="row">
+      <label for="w">Peso del último año</label>
+      <input type="range" id="w" min="0" max="100" value="70">
+      <b id="wv">70%</b>
+      <label for="topn" style="margin-left:auto">Destacar top</label>
+      <select id="topn"><option>6</option><option selected>10</option><option>15</option><option>20</option></select>
+    </div>
+    <div class="sub" id="fdesc" style="margin-bottom:10px"></div>
+    <div class="board" id="board"></div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>Peso alto</span>
+      <span><i style="background:var(--cold)"></i>Peso bajo</span>
+      <span><i style="outline:3px solid var(--ok);background:var(--ball)"></i>Fijado (1 clic)</span>
+      <span><i style="background:var(--ball);opacity:.3;border:1px solid var(--line)"></i>Excluido (2 clics)</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="fixTop">Fijar los 3 primeros del filtro</button>
+      <button class="btn ghost" id="clear">Limpiar selección</button>
+    </div>
+  </section>
+
+  <!-- Generador -->
+  <section class="card">
+    <h2>2 · Genera combinaciones</h2>
+    <div class="row">
+      <label for="strat">Estrategia</label>
+      <select id="strat">
+        <option value="peso">Ponderada (último año + histórico)</option>
+        <option value="calientes">Calientes del último año</option>
+        <option value="frecuentes">Más salidos de siempre</option>
+        <option value="atrasados">Atrasados (llevan tiempo sin salir)</option>
+        <option value="mixta">Mixta: 3 calientes + 2 atrasados + 1 libre</option>
+        <option value="filtro">Usar el filtro activo</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="cnt">Combinaciones</label>
+      <select id="cnt"><option>1</option><option selected>3</option><option>5</option><option>8</option></select>
+      <label><input type="checkbox" id="pattern" checked> Respetar patrones históricos (suma, pares, altos/bajos)</label>
+    </div>
+    <div class="row"><button class="btn" id="gen">🎲 Generar</button><span class="sub" id="genhint"></span></div>
+    <div id="out"></div>
+  </section>
+
+  <section class="card full">
+    <h2>Frecuencia por número</h2>
+    <div class="chips" id="chartWin"></div>
+    <div class="bars" id="bars"></div>
+    <div class="barlbl" id="barlbl"></div>
+  </section>
+
+  <section class="card">
+    <h2>Ranking del filtro activo</h2>
+    <table class="nums" id="rank"></table>
+  </section>
+
+  <section class="card">
+    <h2>Últimos sorteos</h2>
+    <table class="last" id="last"></table>
+  </section>
+</div>
+
+<p class="note">
+Datos: histórico completo de La Primitiva desde el 17/10/1985 (fuente: lotoideas.com, recopilación de los resultados oficiales de Loterías y Apuestas del Estado), actualizado hasta el último sorteo incluido.
+<b>Aviso honesto:</b> cada sorteo es independiente y todas las combinaciones tienen la misma probabilidad (1 entre 13.983.816 de acertar los 6).
+Las frecuencias pasadas no predicen el futuro: este juego te ayuda a elegir con criterio, no aumenta tus probabilidades. Juega con responsabilidad.
+</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DRAWS = /*DATA*/;   // [fecha ISO, [6 números], complementario, reintegro]
+
+// ---------- Estadísticas ----------
+const DAY = 864e5;
+const lastDate = new Date(DRAWS[DRAWS.length-1][0]);
+const fmt = iso => iso.split('-').reverse().join('/');
+function windowDraws(days){ if(!days) return DRAWS; const t = lastDate - days*DAY; return DRAWS.filter(d => new Date(d[0]) > t); }
+function freq(draws){ const f = Array(50).fill(0); draws.forEach(d => d[1].forEach(n => f[n]++)); return f; }
+function ratio(draws){ const f = freq(draws), exp = draws.length*6/49; return f.map(x => exp ? x/exp : 0); }
+
+const ALL = DRAWS, YEAR = windowDraws(365), Q = windowDraws(90), Y5 = windowDraws(365*5);
+const F_ALL = freq(ALL), F_Y = freq(YEAR), F_Q = freq(Q);
+const R_ALL = ratio(ALL), R_Y = ratio(YEAR), R_Q = ratio(Q);
+// sorteos desde la última aparición
+const GAP = Array(50).fill(ALL.length);
+for(let n=1;n<=49;n++){ for(let i=ALL.length-1;i>=0;i--){ if(ALL[i][1].includes(n)){ GAP[n]=ALL.length-1-i; break; } } }
+const AVG_GAP = 49/6;
+// reintegros del último año
+const reinY = Array(10).fill(0); YEAR.forEach(d => d[3]!=null && reinY[d[3]]++);
+// patrones del último año
+const sum = a => a.reduce((x,y)=>x+y,0);
+const pct = (arr,p) => { const s=[...arr].sort((a,b)=>a-b); return s[Math.floor(p*(s.length-1))]; };
+const SUMS_Y = YEAR.map(d=>sum(d[1])), SUMS_ALL = ALL.map(d=>sum(d[1]));
+const SUM_LO = pct(SUMS_Y,.1), SUM_HI = pct(SUMS_Y,.9), SUM_AVG = Math.round(sum(SUMS_ALL)/SUMS_ALL.length);
+const evens = a => a.filter(n=>n%2===0).length, lows = a => a.filter(n=>n<=24).length;
+const consec = a => a.filter((n,i)=>i && n-a[i-1]===1).length;
+function distrib(fn){ const c={}; YEAR.forEach(d=>{const k=fn(d[1]); c[k]=(c[k]||0)+1}); return c; }
+const EVEN_D = distrib(evens), LOW_D = distrib(lows);
+const SET_ALL = new Set(ALL.map(d=>d[1].join('-')));
+
+// ---------- Filtros ----------
+let w = .7;
+const FILTERS = {
+  peso:      {label:'⚖️ Más pesan', desc:()=>`Mezcla la frecuencia del último año (${Math.round(w*100)}%) con la de todo el histórico (${Math.round((1-w)*100)}%). 1,00 = lo esperado por azar.`,
+              score:n => w*R_Y[n] + (1-w)*R_ALL[n], fmt:v=>v.toFixed(2)+'×'},
+  frecuentes:{label:'🏆 Más salidos (histórico)', desc:()=>`Veces que ha salido cada número en los ${ALL.length} sorteos desde 1985.`, score:n=>F_ALL[n], fmt:v=>v+' veces'},
+  calientes: {label:'🔥 Calientes (último año)', desc:()=>`Veces que ha salido en los ${YEAR.length} sorteos de los últimos 12 meses.`, score:n=>F_Y[n], fmt:v=>v+' veces'},
+  racha:     {label:'⚡ En racha (90 días)', desc:()=>`Frecuencia en los ${Q.length} sorteos de los últimos 3 meses.`, score:n=>F_Q[n], fmt:v=>v+' veces'},
+  atrasados: {label:'⏳ Atrasados', desc:()=>`Sorteos que lleva cada número sin salir (la media entre apariciones es ${AVG_GAP.toFixed(1)}).`, score:n=>GAP[n], fmt:v=>v+' sorteos'},
+  frios:     {label:'❄️ Fríos (último año)', desc:()=>`Los que MENOS han salido en el último año.`, score:n=>-F_Y[n], fmt:v=>(-v)+' veces'},
+};
+let active = 'peso', topN = 10;
+const state = Array(50).fill(0); // 0 neutro, 1 fijado, 2 excluido
+
+function ranked(key){ const f=FILTERS[key]; return Array.from({length:49},(_,i)=>i+1).sort((a,b)=>f.score(b)-f.score(a) || a-b); }
+
+function heat(t){ // t 0..1 -> color frío→caliente
+  const cs = getComputedStyle(document.documentElement);
+  return `color-mix(in oklab, ${cs.getPropertyValue('--accent')} ${Math.round(t*100)}%, ${cs.getPropertyValue('--cold')})`;
+}
+
+function renderBoard(){
+  const f = FILTERS[active], order = ranked(active);
+  const vals = order.map(n=>f.score(n)), mx=Math.max(...vals), mn=Math.min(...vals);
+  document.getElementById('fdesc').textContent = f.desc();
+  const board = document.getElementById('board'); board.innerHTML='';
+  for(let n=1;n<=49;n++){
+    const el=document.createElement('div'); const r=order.indexOf(n);
+    const t = mx===mn ? .5 : (f.score(n)-mn)/(mx-mn);
+    el.className='n'+(state[n]===1?' fix':'')+(state[n]===2?' exc':'');
+    if(r<topN){ el.style.background=heat(t); el.style.color='#fff'; el.style.borderColor='transparent'; }
+    else el.style.borderColor=heat(t);
+    el.innerHTML=`${n}<small>${f.fmt(f.score(n)).replace(' veces','').replace(' sorteos','')}</small>`+(r<topN?`<span class="rk">#${r+1}</span>`:'');
+    el.title=`Nº ${n}\nHistórico: ${F_ALL[n]} veces\nÚltimo año: ${F_Y[n]} veces\nÚltimos 90 días: ${F_Q[n]}\nSin salir: ${GAP[n]} sorteos\nClic: fijar · 2 clics: excluir · 3 clics: neutro`;
+    el.onclick=()=>{ state[n]=(state[n]+1)%3; if(state.filter(s=>s===1).length>6){state[n]=2;toast('Máximo 6 fijados');} renderBoard(); };
+    board.appendChild(el);
+  }
+  renderRank();
+}
+
+function renderRank(){
+  const f=FILTERS[active], order=ranked(active).slice(0,15);
+  document.getElementById('rank').innerHTML = `<tr><th>#</th><th>Nº</th><th>${f.label.replace(/^\S+\s/,'')}</th><th>Histórico</th><th>Últ. año</th><th>Sin salir</th></tr>`+
+    order.map((n,i)=>`<tr><td>${i+1}</td><td><b>${n}</b></td><td>${f.fmt(f.score(n))}</td><td>${F_ALL[n]}</td><td>${F_Y[n]}</td><td>${GAP[n]}</td></tr>`).join('');
+}
+
+// ---------- Generador ----------
+function weightsFor(strat){
+  // Peso por puesto en el ranking: el #1 pesa 1, el #10 ≈ 0,47, el #25 ≈ 0,14, el #49 ≈ 0,02
+  const score = {
+    peso: n => w*R_Y[n]+(1-w)*R_ALL[n],
+    calientes: n => R_Y[n]*.75+R_Q[n]*.25,
+    frecuentes: n => F_ALL[n],
+    atrasados: n => GAP[n],
+  }[strat];
+  const order = strat==='filtro' ? ranked(active)
+    : Array.from({length:49},(_,i)=>i+1).sort((a,b)=>score(b)-score(a));
+  const W = Array(50).fill(0);
+  order.forEach((n,i)=> W[n]=Math.exp(-i/12));
+  return W;
+}
+function pick(pool, W, k, taken){
+  const out=[]; let cand=pool.filter(n=>!taken.includes(n));
+  while(out.length<k && cand.length){
+    const tot=cand.reduce((s,n)=>s+W[n],0); let r=Math.random()*tot, ch=cand[cand.length-1];
+    for(const n of cand){ r-=W[n]; if(r<=0){ch=n;break;} }
+    out.push(ch); cand=cand.filter(x=>x!==ch);
+  }
+  return out;
+}
+function patternOK(c){
+  const s=sum(c), e=evens(c), l=lows(c), decs=new Set(c.map(n=>Math.floor(n/10))).size;
+  return s>=SUM_LO && s<=SUM_HI && e>=2 && e<=4 && l>=2 && l<=4 && consec(c)<=1 && decs>=3 && !SET_ALL.has(c.join('-'));
+}
+function generateOne(strat, usePattern, avoid){
+  const fixed=[], pool=[];
+  for(let n=1;n<=49;n++){ if(state[n]===1) fixed.push(n); else if(state[n]!==2) pool.push(n); }
+  let best=null;
+  for(let t=0;t<3000;t++){
+    let c=[...fixed];
+    if(strat==='mixta'){
+      const need=6-c.length;
+      const h=Math.min(3,need), a=Math.min(2,need-h);
+      c.push(...pick(pool,weightsFor('calientes'),h,c));
+      c.push(...pick(pool,weightsFor('atrasados'),a,c));
+      c.push(...pick(pool,weightsFor('peso'),6-c.length,c));
+    } else c.push(...pick(pool,weightsFor(strat),6-c.length,c));
+    c.sort((a,b)=>a-b);
+    if(c.length<6) return null;
+    const key=c.join('-');
+    if(avoid.has(key)) continue;
+    best=c;
+    if(!usePattern || patternOK(c)) return {c, relaxed:false};
+  }
+  return best && {c:best, relaxed:true};
+}
+function bestMatch(c){
+  let m=0, dates=[];
+  for(const d of ALL){ const h=d[1].filter(n=>c.includes(n)).length; if(h>m){m=h;dates=[d[0]];} else if(h===m) dates.push(d[0]); }
+  return {m, n:dates.length, last:dates[dates.length-1]};
+}
+function complementario(c){
+  // complementario sugerido: el de más peso que no esté en la combinación
+  return ranked('peso').find(n=>!c.includes(n) && state[n]!==2);
+}
+function reintegro(){
+  const order=[...Array(10).keys()].sort((a,b)=>reinY[b]-reinY[a]);
+  // elige entre los 3 reintegros más salidos del año ponderando
+  return pick(order.slice(0,3), reinY, 1, [])[0];
+}
+
+const STRAT_TXT = {
+  peso:'Estrategia ponderada: se eligen con más probabilidad los números cuyo rendimiento combinado (último año + histórico) supera lo esperado por azar.',
+  calientes:'Estrategia calientes: prioriza los números que más han salido en los últimos 12 meses, con un plus para los de los últimos 90 días.',
+  frecuentes:'Estrategia histórica: prioriza los números que más veces han salido desde 1985.',
+  atrasados:'Estrategia atrasados: prioriza los números que llevan más sorteos sin aparecer.',
+  mixta:'Estrategia mixta: 3 números calientes del último año, 2 atrasados y 1 elegido por peso combinado.',
+  filtro:'Estrategia por filtro: se ponderan los números según su posición en el filtro activo.'
+};
+
+function explain(c, strat, relaxed){
+  const li=[];
+  li.push(STRAT_TXT[strat].replace('filtro activo', `filtro “${FILTERS[active].label.replace(/^\S+\s/,'')}”`));
+  const fx=c.filter(n=>state[n]===1); if(fx.length) li.push(`Has fijado: <b>${fx.join(', ')}</b>.`);
+  const pr = ranked('peso');
+  c.forEach(n=>{
+    const reasons=[];
+    const ry=R_Y[n], ra=R_ALL[n], rk=pr.indexOf(n)+1;
+    if(state[n]===1) reasons.push('fijado por ti');
+    if(ry>=1.15) reasons.push(`<b>caliente</b>: ${F_Y[n]} veces en el último año (${Math.round((ry-1)*100)}% más de lo esperado)`);
+    else if(ry<=.85) reasons.push(`frío este año (${F_Y[n]} veces), aporta equilibrio`);
+    else reasons.push(`${F_Y[n]} veces en el último año (en la media)`);
+    if(F_Q[n]>=Math.max(...F_Q)*.7 && F_Q[n]>0) reasons.push(`en racha: ${F_Q[n]} veces en 90 días`);
+    if(ra>=1.04) reasons.push(`histórico alto: ${F_ALL[n]} apariciones`);
+    if(GAP[n]>=AVG_GAP*2) reasons.push(`<b>atrasado</b>: ${GAP[n]} sorteos sin salir`);
+    else if(GAP[n]<=1) reasons.push(`salió ${GAP[n]===0?'en el último sorteo':'hace 2 sorteos'}`);
+    reasons.push(`puesto #${rk} en peso combinado`);
+    li.push(`<b>${n}</b> → ${reasons.join(' · ')}.`);
+  });
+  const s=sum(c), e=evens(c), l=lows(c), cs=consec(c);
+  const pctE = Math.round((EVEN_D[e]||0)/YEAR.length*100), pctL=Math.round((LOW_D[l]||0)/YEAR.length*100);
+  li.push(`Suma <b>${s}</b> (el 80% de los sorteos del último año sumó entre ${SUM_LO} y ${SUM_HI}; media histórica ${SUM_AVG}).`);
+  li.push(`${e} pares / ${6-e} impares (reparto visto en el ${pctE}% de los sorteos del último año) · ${l} bajos (1-24) / ${6-l} altos (reparto del ${pctL}%).`);
+  li.push(cs ? `Incluye ${cs} pareja consecutiva, algo que ocurre en casi la mitad de los sorteos.` : 'Sin números consecutivos.');
+  const bm=bestMatch(c);
+  li.push(`Nunca ha salido tal cual. Contra los ${ALL.length} sorteos, como máximo habría acertado <b>${bm.m}</b> (${bm.n} ${bm.n===1?'vez':'veces'}, la última el ${fmt(bm.last)}).`);
+  if(relaxed) li.push('⚠️ Con tus números fijados/excluidos no se pudo cumplir todo el patrón histórico; se muestra la mejor opción encontrada.');
+  return li;
+}
+
+function generate(){
+  const strat=document.getElementById('strat').value, n=+document.getElementById('cnt').value, usePat=document.getElementById('pattern').checked;
+  const out=document.getElementById('out'); out.innerHTML='';
+  const avoid=new Set();
+  for(let i=0;i<n;i++){
+    const g=generateOne(strat,usePat,avoid);
+    if(!g){ out.innerHTML='<p class="sub">No hay suficientes números disponibles: quita exclusiones.</p>'; return; }
+    avoid.add(g.c.join('-'));
+    const comp=complementario(g.c), rein=reintegro();
+    const div=document.createElement('div'); div.className='combo';
+    div.innerHTML=`<button class="btn ghost copy">Copiar</button><div class="balls">${g.c.map(x=>`<div class="b">${x}</div>`).join('')}
+      <span class="tag">C</span><div class="b c" title="Complementario sugerido">${comp}</div>
+      <span class="tag">R</span><div class="b r" title="Reintegro sugerido">${rein}</div></div>
+      <ul class="why">${explain(g.c,strat,g.relaxed).map(x=>`<li>${x}</li>`).join('')}
+      <li>Complementario <b>${comp}</b>: el número de más peso que no está en la combinación. Reintegro <b>${rein}</b>: de los 3 más repetidos del último año (salió ${reinY[rein]} veces).</li></ul>`;
+    div.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(`${g.c.join(' - ')}  C:${comp}  R:${rein}`); toast('Combinación copiada'); };
+    out.appendChild(div);
+  }
+}
+
+// ---------- Gráfico y últimos sorteos ----------
+const WINS = [['Último año',365],['Últimos 5 años',365*5],['Todo el histórico',0],['90 días',90]];
+let chartWin = 365;
+function renderChart(){
+  const f=freq(windowDraws(chartWin)), mx=Math.max(...f.slice(1)), avg=sum(f)/49;
+  document.getElementById('bars').innerHTML = f.slice(1).map((v,i)=>`<div class="bar ${v>avg*1.1?'hot':''}" style="height:${v/mx*100}%" title="${i+1}: ${v} veces"></div>`).join('');
+  document.getElementById('barlbl').innerHTML = f.slice(1).map((_,i)=>`<span>${i+1}</span>`).join('');
+  document.getElementById('chartWin').innerHTML = WINS.map(([l,d])=>`<button class="chip ${d===chartWin?'on':''}" data-d="${d}">${l}</button>`).join('');
+  document.querySelectorAll('#chartWin .chip').forEach(b=>b.onclick=()=>{chartWin=+b.dataset.d;renderChart();});
+}
+function renderLast(){
+  document.getElementById('last').innerHTML = ALL.slice(-10).reverse().map(d=>`<tr><td>${fmt(d[0])}</td><td>${d[1].map(n=>`<span class="mini">${n}</span>`).join('')}${d[2]!=null?`<span class="mini c">${d[2]}</span>`:''}</td><td>R ${d[3]??'-'}</td></tr>`).join('');
+}
+
+// ---------- UI ----------
+function toast(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),1400); }
+function renderFilters(){
+  document.getElementById('filters').innerHTML = Object.entries(FILTERS).map(([k,f])=>`<button class="chip ${k===active?'on':''}" data-k="${k}">${f.label}</button>`).join('');
+  document.querySelectorAll('#filters .chip').forEach(b=>b.onclick=()=>{active=b.dataset.k;renderFilters();renderBoard();});
+}
+document.getElementById('sub').textContent = `${ALL.length.toLocaleString('es')} sorteos analizados · del ${fmt(ALL[0][0])} al ${fmt(ALL[ALL.length-1][0])}`;
+const hotTop = ranked('calientes').slice(0,3), lateTop=ranked('atrasados')[0];
+document.getElementById('stats').innerHTML = `
+  <div class="stat">Sorteos último año<b>${YEAR.length}</b></div>
+  <div class="stat">Más caliente del año<b>${hotTop.join(' · ')}</b></div>
+  <div class="stat">Más atrasado<b>${lateTop} (${GAP[lateTop]})</b></div>
+  <div class="stat">Suma típica (año)<b>${SUM_LO}–${SUM_HI}</b></div>`;
+document.getElementById('w').oninput=e=>{ w=e.target.value/100; document.getElementById('wv').textContent=e.target.value+'%'; renderBoard(); };
+document.getElementById('topn').onchange=e=>{ topN=+e.target.value; renderBoard(); };
+document.getElementById('gen').onclick=generate;
+document.getElementById('clear').onclick=()=>{ state.fill(0); renderBoard(); };
+document.getElementById('fixTop').onclick=()=>{ state.fill(0); ranked(active).slice(0,3).forEach(n=>state[n]=1); renderBoard(); toast('Fijados los 3 primeros'); };
+document.getElementById('strat').onchange=e=>{ document.getElementById('genhint').textContent = e.target.value==='filtro' ? `Usará: ${FILTERS[active].label}` : ''; };
+renderFilters(); renderBoard(); renderChart(); renderLast();
+</script>
+</body>
+</html>
