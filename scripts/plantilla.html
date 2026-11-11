@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorteos Ganadores</title>
+<meta name="description" content="Generador de combinaciones para Primitiva, Bonoloto y EuroDreams basado en el histórico completo de sorteos, con filtros de números calientes, fríos, atrasados y más salidos.">
+<meta name="theme-color" content="#c8102e">
+<meta property="og:title" content="Sorteos Ganadores · Primitiva, Bonoloto y EuroDreams">
+<meta property="og:description" content="Filtra números por frecuencia histórica y del último año, y genera combinaciones explicadas.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23c8102e'/%3E%3Ctext x='32' y='43' font-family='Arial' font-weight='700' font-size='30' fill='white' text-anchor='middle'%3E6%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1d1b18; --muted:#6b665d; --line:#e4dfd4;
+  --accent:#c8102e; --accent-ink:#fff; --gold:#d9a400; --cold:#2f6fb5; --ok:#1f8a4c;
+  --ball:#fffdf8; --ball-ink:#1d1b18; --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+body[data-game="bonoloto"]{--accent:#d2611c}
+body[data-game="eurodreams"]{--accent:#7a3fc4}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15140f; --panel:#1f1d18; --ink:#f1ede4; --muted:#a39d90; --line:#34312a;
+    --accent:#ff4d5e; --accent-ink:#1a0a0c; --gold:#f2c230; --cold:#6fa8e8; --ok:#4cc27e;
+    --ball:#2a2822; --ball-ink:#f1ede4; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  :root:not([data-theme="light"]) body[data-game="bonoloto"]{--accent:#ff8a3d}
+  :root:not([data-theme="light"]) body[data-game="eurodreams"]{--accent:#b07cff}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+.games{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.game{border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:14px;padding:12px 14px;text-align:left;cursor:pointer;box-shadow:var(--shadow)}
+.game b{display:block;font-size:18px}
+.game span{font-size:12px;color:var(--muted)}
+.game.on{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 10%,var(--panel))}
+.game.on b{color:var(--accent)}
+@media (max-width:560px){.game b{font-size:15px}.game span{display:none}}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{margin:0;font-size:28px;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px}
+h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:12px;color:var(--muted)}
+.stat b{display:block;color:var(--ink);font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.row label{font-size:13px;color:var(--muted)}
+input[type=range]{accent-color:var(--accent);width:160px}
+select{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px}
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.n{position:relative;aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:var(--ball);color:var(--ball-ink);
+   display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:17px;user-select:none;transition:transform .08s}
+.n:hover{transform:scale(1.06)}
+.n small{font-size:9px;font-weight:500;opacity:.75;line-height:1}
+.n .rk{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#1d1b18;border-radius:9px;font-size:9px;padding:1px 4px;font-weight:700}
+.n.fix{outline:3px solid var(--ok);outline-offset:2px}
+.n.exc{opacity:.25;text-decoration:line-through}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;margin-right:4px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 18px;font-weight:700;font-size:15px;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;font-size:13px;padding:7px 12px}
+.combo{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.balls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.b{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+.b.c{background:var(--gold);color:#1d1b18}
+.b.r{background:var(--cold);color:#fff}
+.tag{font-size:11px;color:var(--muted);margin:0 2px 0 6px}
+.why{margin:10px 0 0;padding-left:18px;font-size:13.5px}
+.why li{margin:3px 0}
+.why b{font-weight:650}
+.nums{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.nums th,.nums td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
+.nums th:first-child,.nums td:first-child{text-align:left}
+.nums th{color:var(--muted);font-weight:600}
+.bars{display:grid;align-items:end;gap:2px;height:120px;margin-top:6px}
+.bar{background:var(--cold);border-radius:2px 2px 0 0;min-height:2px}
+.bar.hot{background:var(--accent)}
+.barlbl{display:grid;gap:2px;font-size:8px;color:var(--muted);text-align:center}
+.last{font-size:13px;width:100%;border-collapse:collapse}
+.last td{padding:4px 4px;border-bottom:1px solid var(--line)}
+.mini{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--ball);border:1px solid var(--line);align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:2px}
+.mini.c{background:var(--gold);color:#1d1b18;border-color:var(--gold)}
+.note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+.full{grid-column:1/-1}
+.copy{float:right}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body data-game="primitiva">
+<div class="wrap">
+<nav class="games" id="games" aria-label="Elige juego"></nav>
+
+<header>
+  <div>
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <h2>1 · Elige el filtro</h2>
+    <div class="chips" id="filters"></div>
+    <div class="row">
+      <label for="w">Peso del último año</label>
+      <input type="range" id="w" min="0" max="100" value="70">
+      <b id="wv">70%</b>
+      <label for="topn" style="margin-left:auto">Destacar top</label>
+      <select id="topn"><option>6</option><option selected>10</option><option>15</option><option>20</option></select>
+    </div>
+    <div class="sub" id="fdesc" style="margin-bottom:10px"></div>
+    <div class="board" id="board"></div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>Peso alto</span>
+      <span><i style="background:var(--cold)"></i>Peso bajo</span>
+      <span><i style="outline:3px solid var(--ok);background:var(--ball)"></i>Fijado (1 clic)</span>
+      <span><i style="background:var(--ball);opacity:.3;border:1px solid var(--line)"></i>Excluido (2 clics)</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="fixTop">Fijar los 3 primeros del filtro</button>
+      <button class="btn ghost" id="clear">Limpiar selección</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2 · Genera combinaciones</h2>
+    <div class="row">
+      <label for="strat">Estrategia</label>
+      <select id="strat">
+        <option value="peso">Ponderada (último año + histórico)</option>
+        <option value="calientes">Calientes del último año</option>
+        <option value="frecuentes">Más salidos de siempre</option>
+        <option value="atrasados">Atrasados (llevan tiempo sin salir)</option>
+        <option value="mixta">Mixta: 3 calientes + 2 atrasados + 1 libre</option>
+        <option value="filtro">Usar el filtro activo</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="cnt">Combinaciones</label>
+      <select id="cnt"><option>1</option><option selected>3</option><option>5</option><option>8</option></select>
+      <label><input type="checkbox" id="pattern" checked> Respetar patrones históricos (suma, pares, altos/bajos)</label>
+    </div>
+    <div class="row"><button class="btn" id="gen">🎲 Generar</button><span class="sub" id="genhint"></span></div>
+    <div id="out"></div>
+  </section>
+
+  <section class="card full">
+    <h2>Frecuencia por número</h2>
+    <div class="chips" id="chartWin"></div>
+    <div class="bars" id="bars"></div>
+    <div class="barlbl" id="barlbl"></div>
+  </section>
+
+  <section class="card">
+    <h2>Ranking del filtro activo</h2>
+    <table class="nums" id="rank"></table>
+  </section>
+
+  <section class="card">
+    <h2>Últimos sorteos</h2>
+    <table class="last" id="last"></table>
+  </section>
+</div>
+
+<p class="note" id="note"></p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// [fecha ISO, [6 números], extra1, extra2]
+//  Primitiva / Bonoloto: extra1 = complementario, extra2 = reintegro · EuroDreams: extra1 = sueño
+const GAMES = {
+  primitiva: {name:'Primitiva', max:49, cols:7, desc:'6 de 49 · complementario y reintegro', odds:'1 entre 13.983.816 de acertar los 6',
+              extra:'compRein', draws:/*PRIMITIVA*/},
+  bonoloto:  {name:'Bonoloto', max:49, cols:7, desc:'6 de 49 · sorteo diario · complementario y reintegro', odds:'1 entre 13.983.816 de acertar los 6',
+              extra:'compRein', draws:/*BONOLOTO*/},
+  eurodreams:{name:'EuroDreams', max:40, cols:8, desc:'6 de 40 + 1 sueño de 5 · renta mensual', odds:'1 entre 19.191.900 de acertar los 6 + sueño',
+              extra:'sueno', draws:/*EURODREAMS*/},
+};
+
+const DAY = 864e5;
+const fmt = iso => iso.split('-').reverse().join('/');
+const sum = a => a.reduce((x,y)=>x+y,0);
+const pct = (arr,p) => { const s=[...arr].sort((a,b)=>a-b); return s[Math.floor(p*(s.length-1))]; };
+const range = m => Array.from({length:m},(_,i)=>i+1);
+
+// ---------- Estado de juego (se recalcula al cambiar de juego) ----------
+let G, GKEY, MAX, NUMS, ALL, lastDate, YEAR, Q, F_ALL, F_Y, F_Q, R_ALL, R_Y, R_Q, GAP, AVG_GAP, HALF,
+    EXTRA_Y, SUM_LO, SUM_HI, SUM_AVG, EVEN_D, LOW_D, SET_ALL, state;
+
+function windowDraws(days){ if(!days) return ALL; const t = lastDate - days*DAY; return ALL.filter(d => new Date(d[0]) > t); }
+function freq(draws){ const f = Array(MAX+1).fill(0); draws.forEach(d => d[1].forEach(n => f[n]++)); return f; }
+function ratio(draws){ const f = freq(draws), exp = draws.length*6/MAX; return f.map(x => exp ? x/exp : 0); }
+const evens = a => a.filter(n=>n%2===0).length, lows = a => a.filter(n=>n<=HALF).length;
+const consec = a => a.filter((n,i)=>i && n-a[i-1]===1).length;
+function distrib(fn){ const c={}; YEAR.forEach(d=>{const k=fn(d[1]); c[k]=(c[k]||0)+1}); return c; }
+
+function loadGame(key){
+  GKEY = key; G = GAMES[key]; MAX = G.max; NUMS = range(MAX); HALF = Math.floor(MAX/2);
+  ALL = G.draws; lastDate = new Date(ALL[ALL.length-1][0]);
+  YEAR = windowDraws(365); Q = windowDraws(90);
+  F_ALL = freq(ALL); F_Y = freq(YEAR); F_Q = freq(Q);
+  R_ALL = ratio(ALL); R_Y = ratio(YEAR); R_Q = ratio(Q);
+  GAP = Array(MAX+1).fill(ALL.length);
+  for(const n of NUMS){ for(let i=ALL.length-1;i>=0;i--){ if(ALL[i][1].includes(n)){ GAP[n]=ALL.length-1-i; break; } } }
+  AVG_GAP = MAX/6;
+  // extra: reintegro (0-9, columna 3) o sueño (1-5, columna 2)
+  if(G.extra==='compRein'){ EXTRA_Y = Array(10).fill(0); YEAR.forEach(d => d[3]!=null && EXTRA_Y[d[3]]++); }
+  else { EXTRA_Y = Array(6).fill(0); YEAR.forEach(d => d[2]!=null && EXTRA_Y[d[2]]++); }
+  const SUMS_Y = YEAR.map(d=>sum(d[1])), SUMS_ALL = ALL.map(d=>sum(d[1]));
+  SUM_LO = pct(SUMS_Y,.1); SUM_HI = pct(SUMS_Y,.9); SUM_AVG = Math.round(sum(SUMS_ALL)/SUMS_ALL.length);
+  EVEN_D = distrib(evens); LOW_D = distrib(lows);
+  SET_ALL = new Set(ALL.map(d=>d[1].join('-')));
+  state = Array(MAX+1).fill(0);
+  document.body.dataset.game = key;
+  try{ localStorage.setItem('juego', key); }catch(e){}
+  if(location.hash !== '#'+key) history.replaceState(null,'','#'+key);
+  renderAll();
+}
+
+// ---------- Filtros ----------
+let w = .7;
+const FILTERS = {
+  peso:      {label:'⚖️ Más pesan', desc:()=>`Mezcla la frecuencia del último año (${Math.round(w*100)}%) con la de todo el histórico (${Math.round((1-w)*100)}%). 1,00 = lo esperado por azar.`,
+              score:n => w*R_Y[n] + (1-w)*R_ALL[n], fmt:v=>v.toFixed(2)+'×'},
+  frecuentes:{label:'🏆 Más salidos (histórico)', desc:()=>`Veces que ha salido cada número en los ${ALL.length.toLocaleString('es')} sorteos desde ${ALL[0][0].slice(0,4)}.`, score:n=>F_ALL[n], fmt:v=>v+' veces'},
+  calientes: {label:'🔥 Calientes (último año)', desc:()=>`Veces que ha salido en los ${YEAR.length} sorteos de los últimos 12 meses.`, score:n=>F_Y[n], fmt:v=>v+' veces'},
+  racha:     {label:'⚡ En racha (90 días)', desc:()=>`Frecuencia en los ${Q.length} sorteos de los últimos 3 meses.`, score:n=>F_Q[n], fmt:v=>v+' veces'},
+  atrasados: {label:'⏳ Atrasados', desc:()=>`Sorteos que lleva cada número sin salir (la media entre apariciones es ${AVG_GAP.toFixed(1)}).`, score:n=>GAP[n], fmt:v=>v+' sorteos'},
+  frios:     {label:'❄️ Fríos (último año)', desc:()=>`Los que MENOS han salido en el último año.`, score:n=>-F_Y[n], fmt:v=>(-v)+' veces'},
+};
+let active = 'peso', topN = 10;
+
+function ranked(key){ const f=FILTERS[key]; return [...NUMS].sort((a,b)=>f.score(b)-f.score(a) || a-b); }
+
+function heat(t){
+  const cs = getComputedStyle(document.body);
+  return `color-mix(in oklab, ${cs.getPropertyValue('--accent')} ${Math.round(t*100)}%, ${cs.getPropertyValue('--cold')})`;
+}
+
+function renderBoard(){
+  const f = FILTERS[active], order = ranked(active);
+  const vals = order.map(n=>f.score(n)), mx=Math.max(...vals), mn=Math.min(...vals);
+  document.getElementById('fdesc').textContent = f.desc();
+  const board = document.getElementById('board'); board.innerHTML='';
+  board.style.gridTemplateColumns = `repeat(${G.cols},1fr)`;
+  for(const n of NUMS){
+    const el=document.createElement('div'); const r=order.indexOf(n);
+    const t = mx===mn ? .5 : (f.score(n)-mn)/(mx-mn);
+    el.className='n'+(state[n]===1?' fix':'')+(state[n]===2?' exc':'');
+    if(r<topN){ el.style.background=heat(t); el.style.color='#fff'; el.style.borderColor='transparent'; }
+    else el.style.borderColor=heat(t);
+    el.innerHTML=`${n}<small>${f.fmt(f.score(n)).replace(' veces','').replace(' sorteos','')}</small>`+(r<topN?`<span class="rk">#${r+1}</span>`:'');
+    el.title=`Nº ${n}\nHistórico: ${F_ALL[n]} veces\nÚltimo año: ${F_Y[n]} veces\nÚltimos 90 días: ${F_Q[n]}\nSin salir: ${GAP[n]} sorteos\nClic: fijar · 2 clics: excluir · 3 clics: neutro`;
+    el.onclick=()=>{ state[n]=(state[n]+1)%3; if(state.filter(s=>s===1).length>6){state[n]=2;toast('Máximo 6 fijados');} renderBoard(); };
+    board.appendChild(el);
+  }
+  renderRank();
+}
+
+function renderRank(){
+  const f=FILTERS[active], order=ranked(active).slice(0,15);
+  document.getElementById('rank').innerHTML = `<tr><th>#</th><th>Nº</th><th>${f.label.replace(/^\S+\s/,'')}</th><th>Histórico</th><th>Últ. año</th><th>Sin salir</th></tr>`+
+    order.map((n,i)=>`<tr><td>${i+1}</td><td><b>${n}</b></td><td>${f.fmt(f.score(n))}</td><td>${F_ALL[n]}</td><td>${F_Y[n]}</td><td>${GAP[n]}</td></tr>`).join('');
+}
+
+// ---------- Generador ----------
+function weightsFor(strat){
+  // Peso por puesto en el ranking: el #1 pesa 1, el #10 ≈ 0,47, el #25 ≈ 0,14, el último ≈ 0,02
+  const score = {
+    peso: n => w*R_Y[n]+(1-w)*R_ALL[n],
+    calientes: n => R_Y[n]*.75+R_Q[n]*.25,
+    frecuentes: n => F_ALL[n],
+    atrasados: n => GAP[n],
+  }[strat];
+  const order = strat==='filtro' ? ranked(active) : [...NUMS].sort((a,b)=>score(b)-score(a));
+  const W = Array(MAX+1).fill(0);
+  order.forEach((n,i)=> W[n]=Math.exp(-i/12));
+  return W;
+}
+function pick(pool, W, k, taken){
+  const out=[]; let cand=pool.filter(n=>!taken.includes(n));
+  while(out.length<k && cand.length){
+    const tot=cand.reduce((s,n)=>s+W[n],0); let r=Math.random()*tot, ch=cand[cand.length-1];
+    for(const n of cand){ r-=W[n]; if(r<=0){ch=n;break;} }
+    out.push(ch); cand=cand.filter(x=>x!==ch);
+  }
+  return out;
+}
+function patternOK(c){
+  const s=sum(c), e=evens(c), l=lows(c), decs=new Set(c.map(n=>Math.floor(n/10))).size;
+  return s>=SUM_LO && s<=SUM_HI && e>=2 && e<=4 && l>=2 && l<=4 && consec(c)<=1 && decs>=3 && !SET_ALL.has(c.join('-'));
+}
+function generateOne(strat, usePattern, avoid){
+  const fixed=[], pool=[];
+  for(const n of NUMS){ if(state[n]===1) fixed.push(n); else if(state[n]!==2) pool.push(n); }
+  let best=null;
+  for(let t=0;t<3000;t++){
+    let c=[...fixed];
+    if(strat==='mixta'){
+      const need=6-c.length, h=Math.min(3,need), a=Math.min(2,need-h);
+      c.push(...pick(pool,weightsFor('calientes'),h,c));
+      c.push(...pick(pool,weightsFor('atrasados'),a,c));
+      c.push(...pick(pool,weightsFor('peso'),6-c.length,c));
+    } else c.push(...pick(pool,weightsFor(strat),6-c.length,c));
+    c.sort((a,b)=>a-b);
+    if(c.length<6) return null;
+    if(avoid.has(c.join('-'))) continue;
+    best=c;
+    if(!usePattern || patternOK(c)) return {c, relaxed:false};
+  }
+  return best && {c:best, relaxed:true};
+}
+function bestMatch(c){
+  let m=0, dates=[];
+  for(const d of ALL){ const h=d[1].filter(n=>c.includes(n)).length; if(h>m){m=h;dates=[d[0]];} else if(h===m) dates.push(d[0]); }
+  return {m, n:dates.length, last:dates[dates.length-1]};
+}
+function topExtra(k){
+  const idx = EXTRA_Y.map((_,i)=>i).filter(i=> G.extra==='sueno' ? i>=1 : true);
+  const order = idx.sort((a,b)=>EXTRA_Y[b]-EXTRA_Y[a]);
+  return pick(order.slice(0,k), EXTRA_Y.map(x=>x||1), 1, [])[0];
+}
+// Devuelve las bolas extra y su explicación según el juego
+function extras(c){
+  if(G.extra==='compRein'){
+    const comp = ranked('peso').find(n=>!c.includes(n) && state[n]!==2);
+    const rein = topExtra(3);
+    return { html:`<span class="tag">C</span><div class="b c" title="Complementario sugerido">${comp}</div><span class="tag">R</span><div class="b r" title="Reintegro sugerido">${rein}</div>`,
+             txt:`Complementario <b>${comp}</b>: el número de más peso que no está en la combinación. Reintegro <b>${rein}</b>: de los 3 más repetidos del último año (salió ${EXTRA_Y[rein]} veces).`,
+             copy:`C:${comp}  R:${rein}` };
+  }
+  const s = topExtra(2), tot = sum(EXTRA_Y);
+  const dist = range(5).map(i=>`${i}: ${EXTRA_Y[i]}`).join(' · ');
+  return { html:`<span class="tag">Sueño</span><div class="b r" title="Sueño sugerido">${s}</div>`,
+           txt:`Sueño <b>${s}</b>: uno de los 2 sueños más repetidos del último año (${EXTRA_Y[s]} de ${tot} sorteos; reparto ${dist}).`,
+           copy:`Sueño:${s}` };
+}
+
+const STRAT_TXT = {
+  peso:'Estrategia ponderada: se eligen con más probabilidad los números cuyo rendimiento combinado (último año + histórico) supera lo esperado por azar.',
+  calientes:'Estrategia calientes: prioriza los números que más han salido en los últimos 12 meses, con un plus para los de los últimos 90 días.',
+  frecuentes:'Estrategia histórica: prioriza los números que más veces han salido en todo el histórico.',
+  atrasados:'Estrategia atrasados: prioriza los números que llevan más sorteos sin aparecer.',
+  mixta:'Estrategia mixta: 3 números calientes del último año, 2 atrasados y 1 elegido por peso combinado.',
+  filtro:'Estrategia por filtro: se ponderan los números según su posición en el filtro activo.'
+};
+
+function explain(c, strat, relaxed){
+  const li=[];
+  li.push(STRAT_TXT[strat].replace('filtro activo', `filtro “${FILTERS[active].label.replace(/^\S+\s/,'')}”`));
+  const fx=c.filter(n=>state[n]===1); if(fx.length) li.push(`Has fijado: <b>${fx.join(', ')}</b>.`);
+  const pr = ranked('peso'), qMax = Math.max(...F_Q);
+  c.forEach(n=>{
+    const reasons=[], ry=R_Y[n], ra=R_ALL[n], rk=pr.indexOf(n)+1;
+    if(state[n]===1) reasons.push('fijado por ti');
+    if(ry>=1.15) reasons.push(`<b>caliente</b>: ${F_Y[n]} veces en el último año (${Math.round((ry-1)*100)}% más de lo esperado)`);
+    else if(ry<=.85) reasons.push(`frío este año (${F_Y[n]} veces), aporta equilibrio`);
+    else reasons.push(`${F_Y[n]} veces en el último año (en la media)`);
+    if(F_Q[n]>=qMax*.7 && F_Q[n]>0) reasons.push(`en racha: ${F_Q[n]} veces en 90 días`);
+    if(ra>=1.04) reasons.push(`histórico alto: ${F_ALL[n]} apariciones`);
+    if(GAP[n]>=AVG_GAP*2) reasons.push(`<b>atrasado</b>: ${GAP[n]} sorteos sin salir`);
+    else if(GAP[n]<=1) reasons.push(`salió ${GAP[n]===0?'en el último sorteo':'hace 2 sorteos'}`);
+    reasons.push(`puesto #${rk} de ${MAX} en peso combinado`);
+    li.push(`<b>${n}</b> → ${reasons.join(' · ')}.`);
+  });
+  const s=sum(c), e=evens(c), l=lows(c), cs=consec(c);
+  const pctE = Math.round((EVEN_D[e]||0)/YEAR.length*100), pctL=Math.round((LOW_D[l]||0)/YEAR.length*100);
+  li.push(`Suma <b>${s}</b> (el 80% de los sorteos del último año sumó entre ${SUM_LO} y ${SUM_HI}; media histórica ${SUM_AVG}).`);
+  li.push(`${e} pares / ${6-e} impares (reparto visto en el ${pctE}% de los sorteos del último año) · ${l} bajos (1-${HALF}) / ${6-l} altos (reparto del ${pctL}%).`);
+  li.push(cs ? `Incluye ${cs} pareja consecutiva, algo habitual en los sorteos reales.` : 'Sin números consecutivos.');
+  const bm=bestMatch(c);
+  li.push(`Nunca ha salido tal cual. Contra los ${ALL.length.toLocaleString('es')} sorteos, como máximo habría acertado <b>${bm.m}</b> (${bm.n} ${bm.n===1?'vez':'veces'}, la última el ${fmt(bm.last)}).`);
+  if(relaxed) li.push('⚠️ Con tus números fijados/excluidos no se pudo cumplir todo el patrón histórico; se muestra la mejor opción encontrada.');
+  return li;
+}
+
+function generate(){
+  const strat=document.getElementById('strat').value, n=+document.getElementById('cnt').value, usePat=document.getElementById('pattern').checked;
+  const out=document.getElementById('out'); out.innerHTML='';
+  const avoid=new Set();
+  for(let i=0;i<n;i++){
+    const g=generateOne(strat,usePat,avoid);
+    if(!g){ out.innerHTML='<p class="sub">No hay suficientes números disponibles: quita exclusiones.</p>'; return; }
+    avoid.add(g.c.join('-'));
+    const x=extras(g.c);
+    const div=document.createElement('div'); div.className='combo';
+    div.innerHTML=`<button class="btn ghost copy">Copiar</button><div class="balls">${g.c.map(v=>`<div class="b">${v}</div>`).join('')}${x.html}</div>
+      <ul class="why">${explain(g.c,strat,g.relaxed).map(v=>`<li>${v}</li>`).join('')}<li>${x.txt}</li></ul>`;
+    div.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(`${G.name}: ${g.c.join(' - ')}  ${x.copy}`); toast('Combinación copiada'); };
+    out.appendChild(div);
+  }
+}
+
+// ---------- Gráfico y últimos sorteos ----------
+const WINS = [['Último año',365],['Últimos 5 años',365*5],['Todo el histórico',0],['90 días',90]];
+let chartWin = 365;
+function renderChart(){
+  const f=freq(windowDraws(chartWin)), mx=Math.max(...f.slice(1)), avg=sum(f)/MAX;
+  const bars=document.getElementById('bars'), lbl=document.getElementById('barlbl');
+  bars.style.gridTemplateColumns = lbl.style.gridTemplateColumns = `repeat(${MAX},1fr)`;
+  bars.innerHTML = f.slice(1).map((v,i)=>`<div class="bar ${v>avg*1.1?'hot':''}" style="height:${mx?v/mx*100:0}%" title="${i+1}: ${v} veces"></div>`).join('');
+  lbl.innerHTML = f.slice(1).map((_,i)=>`<span>${i+1}</span>`).join('');
+  document.getElementById('chartWin').innerHTML = WINS.map(([l,d])=>`<button class="chip ${d===chartWin?'on':''}" data-d="${d}">${l}</button>`).join('');
+  document.querySelectorAll('#chartWin .chip').forEach(b=>b.onclick=()=>{chartWin=+b.dataset.d;renderChart();});
+}
+function renderLast(){
+  document.getElementById('last').innerHTML = ALL.slice(-10).reverse().map(d=>{
+    const ex = G.extra==='compRein'
+      ? `${d[2]!=null?`<span class="mini c" title="Complementario">${d[2]}</span>`:''}</td><td>R ${d[3]??'-'}`
+      : `</td><td>Sueño ${d[2]??'-'}`;
+    return `<tr><td>${fmt(d[0])}</td><td>${d[1].map(n=>`<span class="mini">${n}</span>`).join('')}${ex}</td></tr>`;
+  }).join('');
+}
+
+// ---------- UI ----------
+function toast(t){ const el=document.getElementById('toast'); el.textContent=t; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),1400); }
+function renderGames(){
+  document.getElementById('games').innerHTML = Object.entries(GAMES).map(([k,g])=>
+    `<button class="game ${k===GKEY?'on':''}" data-k="${k}"><b>${g.name}</b><span>${g.desc} · ${g.draws.length.toLocaleString('es')} sorteos</span></button>`).join('');
+  document.querySelectorAll('#games .game').forEach(b=>b.onclick=()=>{ if(b.dataset.k!==GKEY){ document.getElementById('out').innerHTML=''; loadGame(b.dataset.k);} });
+}
+function renderFilters(){
+  document.getElementById('filters').innerHTML = Object.entries(FILTERS).map(([k,f])=>`<button class="chip ${k===active?'on':''}" data-k="${k}">${f.label}</button>`).join('');
+  document.querySelectorAll('#filters .chip').forEach(b=>b.onclick=()=>{active=b.dataset.k;renderFilters();renderBoard();
+    if(document.getElementById('strat').value==='filtro') document.getElementById('genhint').textContent=`Usará: ${FILTERS[active].label}`;});
+}
+function renderHeader(){
+  const suf = G.name==='EuroDreams' ? 'Ganador' : 'Ganadora';
+  document.getElementById('title').innerHTML = `${G.name} <span>${suf}</span>`;
+  document.title = `${G.name} ${suf}`;
+  document.getElementById('sub').textContent = `${ALL.length.toLocaleString('es')} sorteos analizados · del ${fmt(ALL[0][0])} al ${fmt(ALL[ALL.length-1][0])}`;
+  const hotTop = ranked('calientes').slice(0,3), lateTop=ranked('atrasados')[0];
+  const exLbl = G.extra==='compRein' ? 'Reintegro top (año)' : 'Sueño top (año)';
+  const exTop = EXTRA_Y.map((v,i)=>[v,i]).filter(([,i])=>G.extra==='sueno'?i>=1:true).sort((x,y)=>y[0]-x[0])[0][1];
+  document.getElementById('stats').innerHTML = `
+    <div class="stat">Sorteos último año<b>${YEAR.length}</b></div>
+    <div class="stat">Más caliente del año<b>${hotTop.join(' · ')}</b></div>
+    <div class="stat">Más atrasado<b>${lateTop} (${GAP[lateTop]})</b></div>
+    <div class="stat">Suma típica (año)<b>${SUM_LO}–${SUM_HI}</b></div>
+    <div class="stat">${exLbl}<b>${exTop}</b></div>`;
+  document.getElementById('note').innerHTML = `Datos: histórico completo de ${G.name} desde el ${fmt(ALL[0][0])} hasta el ${fmt(ALL[ALL.length-1][0])} (fuente: lotoideas.com, recopilación de los resultados oficiales de Loterías y Apuestas del Estado).
+    <b>Aviso honesto:</b> cada sorteo es independiente y todas las combinaciones tienen la misma probabilidad (${G.odds}).
+    Las frecuencias pasadas no predicen el futuro: este juego te ayuda a elegir con criterio, no aumenta tus probabilidades. Juega con responsabilidad.`;
+}
+function renderAll(){ renderGames(); renderHeader(); renderFilters(); renderBoard(); renderChart(); renderLast(); }
+
+document.getElementById('w').oninput=e=>{ w=e.target.value/100; document.getElementById('wv').textContent=e.target.value+'%'; renderBoard(); };
+document.getElementById('topn').onchange=e=>{ topN=+e.target.value; renderBoard(); };
+document.getElementById('gen').onclick=generate;
+document.getElementById('clear').onclick=()=>{ state.fill(0); renderBoard(); };
+document.getElementById('fixTop').onclick=()=>{ state.fill(0); ranked(active).slice(0,3).forEach(n=>state[n]=1); renderBoard(); toast('Fijados los 3 primeros'); };
+document.getElementById('strat').onchange=e=>{ document.getElementById('genhint').textContent = e.target.value==='filtro' ? `Usará: ${FILTERS[active].label}` : ''; };
+window.addEventListener('hashchange',()=>{ const k=location.hash.slice(1); if(GAMES[k] && k!==GKEY) loadGame(k); });
+
+let start = location.hash.slice(1);
+if(!GAMES[start]){ try{ start = localStorage.getItem('juego'); }catch(e){ start=null; } }
+loadGame(GAMES[start] ? start : 'primitiva');
+</script>
+</body>
+</html>
